@@ -1,3 +1,4 @@
+// 演示
 /*global module:false*/
 module.exports = function(grunt) {
 
