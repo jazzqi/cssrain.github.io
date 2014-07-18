@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0">
+    <title>最近一周的工作</title>
+    <link rel="stylesheet" type="text/css" href="../bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="res/lib/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css">
+    <link rel="stylesheet" type="text/css" href="res/common/css3loading.css">
+    <style>
+    .container{
+    	max-width: 688px;
+    }
+    #loggedin,
+    #DateWrap { 
+        display: none; 
+    }
+    #followingBallsG { 
+        visibility: hidden; 
+    }
+    .breadcrumb{margin-top:10px;}
+    #DateWrap{
+    	padding:4px 0;
+    }
+    .jumbotron {
+		text-align: center;
+		background-color: transparent;
+	}
+	.panelwrap{
+		padding:10px 20px;
+	}
+	.fn-right{float:right;}
+</style> 
+</head>
+<body> 
+
+<div class="container">
+    <div class="row">
+        <div class="jumbotron" id="loggedout">
+            <h1>周报助手!</h1>
+            <p class="lead">让每个人都更好的管理自己的工作，不再为写周报而发愁。</p>
+            <p><a class="btn btn-lg btn-success" href="javascript:;" role="button" id="connectLink">马上使用</a></p>
+        </div>
+        <div class="panelwrap">
+       		<div id="loggedin" class="menu">
+				<div id="followingBallsG">
+					<div id="followingBallsG_1" class="followingBallsG">
+					</div>
+					<div id="followingBallsG_2" class="followingBallsG">
+					</div>
+					<div id="followingBallsG_3" class="followingBallsG">
+					</div>
+					<div id="followingBallsG_4" class="followingBallsG">
+					</div>
+				</div>
+
+	       		<ol class="breadcrumb">
+					<li class="active">当前用户：<span id="fullName"></span></li>
+					<li><a id="disconnect" href="javascript:;">退出</a></li>
+					<li class="fn-right"><a id="changedate" href="javascript:;">换换日期</a></li>
+				</ol>
+
+				<div class="row" id="DateWrap">
+				   <div class='col-md-4'>
+				        <div class="form-group">
+				            <div class='input-group date' id='datetimepicker8' data-date-format="YYYY-MM-DD">
+				                <input type='text' class="form-control" />
+				                <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+				                </span>
+				            </div>
+				        </div>
+				    </div>
+				    <div class='col-md-4'>
+				        <div class="form-group">
+				            <div class='input-group date' id='datetimepicker9' data-date-format="YYYY-MM-DD">
+				                <input type='text' class="form-control" />
+				                <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+				                </span>
+				            </div>
+				        </div>
+				    </div>
+				    <div class='col-md-4'>
+				        <div class="form-group">
+					   		<button type="button" id="loading-btn" data-loading-text="Loading..." class="btn btn-primary">
+							查看此段时间内的工作
+							</button>
+						</div>
+				    </div>
+				</div>
+
+		        <div class="panel panel-info">
+					  <div class="panel-heading">
+					    <h3 class="panel-title">本周已完成的工作</h3>
+					  </div>
+					  <div class="panel-body">
+							<dl class="dl-horizontal" id="outputDone">
+							</dl>
+					  </div>
+				</div>
+
+		        <div class="panel panel-info">
+					  <div class="panel-heading">
+					    <h3 class="panel-title">本周正在进行的工作</h3>
+					  </div>
+					  <div class="panel-body">
+							<dl class="dl-horizontal" id="outputDoing">
+							</dl>
+					  </div>
+				</div> 
+			</div>
+		</div>
+ 
+    </div>
+</div>
+
+
+
+
+
+<script type="text/javascript" src="res/lib/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://api.trello.com/1/client.js?key=93a14c35871c5f65fbbfd419367b6606"></script>
+<script src="../bootstrap/js/bootstrap.min.js" ></script>
+<script src="res/lib/momentjs/moment.js" ></script>
+<script src="res/lib/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js" ></script>
+<script src="res/lib/bootstrap-datetimepicker/js/bootstrap-datetimepicker.zh-CN.js" ></script>
+<script>
+/** 
+* 获取本周、本季度、本月、上月的开端日期、停止日期 
+*/ 
+var now = new Date(); //当前日期 
+var nowDayOfWeek = now.getDay(); //今天本周的第几天
+var nowDay = now.getDate(); //当前日
+var nowMonth = now.getMonth(); //当前月 
+var nowYear = now.getFullYear(); //当前年
+//格局化日期：yyyy-MM-dd 
+function formatDate(date) { 
+    var myyear = date.getFullYear(); 
+    var mymonth = date.getMonth()+1; 
+    var myweekday = date.getDate(); 
+
+    if(mymonth < 10){ 
+    mymonth = "0" + mymonth; 
+    } 
+    if(myweekday < 10){ 
+    myweekday = "0" + myweekday; 
+    } 
+    return (myyear+"-"+mymonth + "-" + myweekday); 
+}
+//获得本周的开端日期 
+function getWeekStartDate() { 
+    var weekStartDate = new Date(nowYear, nowMonth, nowDay - nowDayOfWeek+1); 
+    return formatDate(weekStartDate); 
+}
+//获得本周的停止日期 
+function getWeekEndDate() { 
+    var weekEndDate = new Date(nowYear, nowMonth, nowDay + (6 - nowDayOfWeek-1)); 
+    return formatDate(weekEndDate); 
+} 
+
+$(function () {
+	$("#changedate").click(function(){
+		$("#DateWrap").toggle();
+	});
+    $('#datetimepicker8').datetimepicker({pickTime: false,language:'zh-cn'});
+    $('#datetimepicker9').datetimepicker({pickTime: false,language:'zh-cn'});
+    $("#datetimepicker8").on("dp.change",function (e) {
+       $('#datetimepicker9').data("DateTimePicker").setMinDate(e.date);
+    });
+    $("#datetimepicker9").on("dp.change",function (e) {
+       $('#datetimepicker8').data("DateTimePicker").setMaxDate(e.date);
+    });
+
+    $("#loading-btn").click(function(){
+    	var sd = $('#datetimepicker8 input').val()+" 00:00:00";
+    	var ed = $('#datetimepicker9 input').val()+" 23:59:59";
+    	getListByDate({"since":sd,"before":ed });
+    	return false;
+    });
+
+    $('#datetimepicker8').data("DateTimePicker").setDate(getWeekStartDate());
+    $('#datetimepicker9').data("DateTimePicker").setDate(getWeekEndDate());
+
+
+	//登录
+	$("#connectLink").click(function(){
+	    AuthenticateTrello();
+	});
+	//退出
+	$("#disconnect").click(logout);
+});
+
+function updateLoggedIn() {
+    var isLoggedIn = Trello.authorized();
+    $("#loggedout").toggle(!isLoggedIn);
+    $("#loggedin").toggle(isLoggedIn);        
+};
+function logout() {
+    Trello.deauthorize();
+    updateLoggedIn();
+};
+//登录
+function AuthenticateTrello() {
+    Trello.authorize({
+        name: "最近一周的工作",
+        type: "popup",
+        interactive: true,
+        expiration: "never",
+        scope: { write: true, read: true },
+        success: function () { onAuthorizeSuccessful(); },
+        error: function () { onFailedAuthorization(); }
+    });
+}
+//成功
+function onAuthorizeSuccessful() {
+    var token = Trello.token();
+    updateLoggedIn();
+    getListByDate();
+}
+//获取工作
+function getListByDate(argJson){
+	if(!argJson){
+		var argJson = {
+			since : getWeekStartDate() +" 00:00:00",
+			before : getWeekEndDate() +" 23:59:59"
+		}
+	}
+    var $cards = $("#followingBallsG").css("visibility","visible");
+	$("#outputDone,#outputDoing").empty();       
+    var trelloPara = {
+    	cards :"visible",
+    	card_fields:"name,idBoard,idList,dateLastActivity,shortLink,shortUrl", 
+    	boards :"organization",
+    	board_fields:"name",
+    	board_lists :"open",
+    	actions:"updateCard:idList", 
+    	action_since:argJson.since, 
+    	action_before:argJson.before
+    }
+	Trello.get("members/me", trelloPara , function(json) {
+        console.log(json);
+        for(var m=0;m<json.cards.length;m++){
+            for(var n=0;n<json.boards.length;n++){
+                if( json.cards[m].idBoard==json.boards[n].id ){
+                    json.cards[m].boardName = json.boards[n].name;
+                    for(var k=0;k<json.boards[n].lists.length;k++){
+                        if( json.cards[m].idList==json.boards[n].lists[k].id ){
+                            json.cards[m].listName = json.boards[n].lists[k].name;
+                        }
+                    }
+                }
+            }
+        }
+        console.log("============");
+        console.log(json);
+        var donehHtml = "";
+        var doinghHtml = "";
+        for(var g=0;g<json.cards.length;g++){
+            if(json.cards[g].listName=="Done"){
+            	donehHtml += "<p><strong>"+json.cards[g].boardName +"：</strong><a href='"+json.cards[g].shortUrl+"' target='_blank'>"+json.cards[g].name+"</a></p>";
+            }
+            if(json.cards[g].listName=="Doing"){
+            	doinghHtml += "<p><strong>"+json.cards[g].boardName+"：</strong><a href='"+json.cards[g].shortUrl+"' target='_blank'>"+json.cards[g].name+"</a></p>";
+            }
+        }
+       	$("#fullName").text(json.fullName);
+        $("#outputDone").html(donehHtml);
+        $("#outputDoing").html(doinghHtml);
+        $cards.css("visibility","hidden");
+    },function(cards) {
+        alert('加载数据出了点小问题，请重试！');
+    });
+}
+//失败
+function onFailedAuthorization() {
+    alert("登录失败!");
+}
+</script>
+</body>
+</html>
